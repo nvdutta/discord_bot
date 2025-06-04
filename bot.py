@@ -16,6 +16,8 @@ client = discord.Client(intents=intents)
 
 llm = genai.Client(api_key=gemini_api_key)
 
+chat_history = """"""
+
 background = """
                 ****BACKGROUND****
                 You are Orenomnom, AKA Nick. You are 25 years old.
@@ -43,35 +45,34 @@ async def on_ready():
 async def on_message(message):
     global responses_today
     global answered_question_today
+    global chat_history
+
     #Do not respond to messages from the bot itself
     if message.author == client.user:
         return
     
-    if responses_today == max_responses_per_day:
-        await message.reply("zzz")
-        responses_today += 1
-        return
     
     if responses_today > max_responses_per_day:
         return
 
     #Specifically mentioned in message
     if message.mentions and client.user in message.mentions and not message.mention_everyone:
+
+        if responses_today == max_responses_per_day:
+            await message.reply("zzz")
+            responses_today += 1
+            return
+    
         print(f"Received mention: {message.content}")
 
-        context = f"""They said: {message.content}"""
-
-        if message.type == discord.MessageType.reply:
-            context = f"""You said: {message.reference.resolved.content}\n""" + context
-            ##if message.reference.resolved.type == discord.MessageType.reply:
-            ##    context = f"""They said: {message.reference.resolved.reference.resolved.content}\n""" + context
+        chat_history += f"**They said: \n{message.content}\n"
 
         answer = llm.models.generate_content(
                 model=model,
                 contents=f"""
                 {background}
                 ****REPLY CHAIN****
-                {context}
+                {chat_history}
                 
                 How do you respond?"""
             )
@@ -79,13 +80,17 @@ async def on_message(message):
         await message.channel.send(answer.text)
         ##await message.reply(answer.text)
         print(f"Sent response: {answer.text}")
+        chat_history += f"**You said: \n{answer.text}\n"
         responses_today += 1
+        ##print(f"***Full Chat History***: \n{chat_history}")
         return
 
 
     #Question of the Day
     if message.content.lower().replace("*","").startswith("qotd") and not answered_question_today:
         print(f"Received message: {message.content}")
+        
+        chat_history += f"{message.content}\n"
         answer = llm.models.generate_content(
             model=model,
             contents=f"""
@@ -97,7 +102,9 @@ async def on_message(message):
         
         await message.reply(answer.text)
         print(f"Sent response: {answer.text}")
+        chat_history += f"**You said:\n{answer.text}\n"
         answered_question_today = True
+        ##print(f"***Full Chat History***: \n{chat_history}")
         return
 
 client.run(bot_token)
