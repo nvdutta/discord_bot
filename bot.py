@@ -1,5 +1,6 @@
 import discord
 import os
+import ollama
 from dotenv import load_dotenv
 from google import genai
 
@@ -14,7 +15,10 @@ intents.message_content = True  # Enable message content intent
 
 client = discord.Client(intents=intents)
 
-llm = genai.Client(api_key=gemini_api_key)
+#llm = genai.Client(api_key=gemini_api_key)
+
+ollama_model = "qwen3"
+ollm = ollama.Client(host="http://localhost:11434")
 
 chat_history = """"""
 
@@ -79,12 +83,20 @@ async def on_message(message):
     if message.mentions and client.user in message.mentions and not message.mention_everyone:
 
         if responses_today == max_responses_per_day:
-            answer = llm.models.generate_content(
+            # answer = llm.models.generate_content(
+            #     model=model,
+            #     contents=f"""
+            #     {background}
+            #     Offer a short, vague excuse for why you have to go."""
+            # ).text.replace("\n\n", "\n")
+            answer = ollm.generate(
                 model=model,
-                contents=f"""
+                think=False,
+                prompt=f"""
                 {background}
                 Offer a short, vague excuse for why you have to go."""
-            ).text.replace("\n\n", "\n")
+            ).response.replace("\n\n", "\n")
+            
             await message.reply(answer)
             responses_today += 1
             return
@@ -93,15 +105,27 @@ async def on_message(message):
 
         chat_history += f"**They said: \n{message.content}\n"
 
-        answer = llm.models.generate_content(
-                model=model,
-                contents=f"""
-                {background}
-                ****REPLY CHAIN****
-                {chat_history}
+        # answer = llm.models.generate_content(
+        #         model=model,
+        #         contents=f"""
+        #         {background}
+        #         ****REPLY CHAIN****
+        #         {chat_history}
                 
-                How do you respond?"""
-            ).text.replace("\n\n", "\n")
+        #         How do you respond?"""
+        #     ).text.replace("\n\n", "\n")
+
+        answer = ollm.generate(
+                    model=ollama_model,
+                    think=False,
+                    prompt=f"""
+                    {background}
+                    ****REPLY CHAIN****
+                    {chat_history}
+                    
+                    How do you respond?"""
+                ).response.replace("\n\n", "\n")
+
 
         await message.reply(answer)
         print(f"Sent response: {answer}")
@@ -115,15 +139,26 @@ async def on_message(message):
         print(f"Received message: {message.content}")
         
         chat_history += f"{message.content}\n"
-        answer = llm.models.generate_content(
-            model=model,
-            contents=f"""
+        # answer = llm.models.generate_content(
+        #     model=model,
+        #     contents=f"""
+        #     {background}
+        #     Answer the following question, in 20 words or fewer.
+        #     Your response must contain a specific answer.
+        #     ****QUESTION****
+        #     {message.content[5:]}"""
+        # ).text.replace("\n\n", "\n")
+
+        answer = ollm.generate(
+            model=ollama_model,
+            think=False,
+            prompt=f"""
             {background}
             Answer the following question, in 20 words or fewer.
             Your response must contain a specific answer.
             ****QUESTION****
             {message.content[5:]}"""
-        ).text.replace("\n\n", "\n")
+        ).response.replace("\n\n", "\n")
         
         await message.channel.send(answer)
         print(f"Sent response: {answer}")
