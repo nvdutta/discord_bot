@@ -8,7 +8,7 @@ load_dotenv()
 
 bot_token = os.getenv("BOT_TOKEN")
 gemini_api_key = os.getenv("GEMINI_API_KEY")
-model = os.getenv("MODEL")
+#model = os.getenv("MODEL")
 
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent
@@ -115,7 +115,7 @@ async def on_message(message):
             #     Offer a short, vague excuse for why you have to go."""
             # ).text.replace("\n\n", "\n")
             answer = ollm.generate(
-                model=model,
+                model=ollama_model,
                 think=False,
                 prompt=f"""
                 {background}
