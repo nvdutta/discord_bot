@@ -190,7 +190,7 @@ async def on_message(message):
         await message.channel.send(answer)
         print(f"Sent response: {answer}")
         #chat_history += f"**You said:\n{answer}\n"
-        #answered_question_today = True
+        answered_question_today = True
         return
 
 client.run(bot_token)
