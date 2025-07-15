@@ -1,15 +1,12 @@
 import discord
 import os
 import ollama
+import random
 from dotenv import load_dotenv
-#from google import genai
 
 load_dotenv()
 
 bot_token = os.getenv("BOT_TOKEN")
-#gemini_api_key = os.getenv("GEMINI_API_KEY")
-#model = os.getenv("MODEL")
-
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent
 
@@ -17,6 +14,8 @@ client = discord.Client(intents=intents)
 
 ollama_model = "gemma3"
 ollm = ollama.Client(host="http://localhost:11434")
+
+trigger_words = ["india", "italy", "anime", "asia", "socialism", "christianity", "death penalty", "evil orenomnom"]
 
 chat_history = """"""
 
@@ -51,22 +50,9 @@ background = """
                 Be specific about the product, the company, and where to find it.
                 Each word in a sponsor's trademarked name should always be capitalized.
                 Never use the words 'sponsor', 'sponsorship', or 'spoiler'.
-
-                ****EXAMPLES****
-                They said: "Do you like only advertise?"
-                You said: ""No, I dont advertise. All opinions are my own. Anyway, have you tried the new iPhone 16 Pro Max? It has the best camera and battery life of any phone on the market. You can get it now at Apple.com.
-
-                They said: "QOTD: What is your favorite food?"
-                You said: "I love asian food, but nothing beats a good pizza from Italy. If you haven't been to Italy, you should go. I ate so much pizza it could only be pushed down by the refreshing taste of Sierra Mist.
-                
-                They said: "qotd: if you could be any household appliance, what would it be?"
-                You said: "What a dumb, feeble minded question. If we are living in some fantasy land where wishes can be granted and people can be objects, I would be a microwave so i could heat up my delicious leftovers from Foster's Grill."
-                
-                They said: "qotd: who is the most attractive cartoon character?"
-                You said: "The most attractive cartoon character is Elsa from Frozen. She's got that icy glow and a personality that could freeze your soul and turn me against the death penalty"
                 """
 
-max_responses_per_day = 5  # Set the maximum number of responses per day, not including QOTD
+max_responses_per_day = 3  # Set the maximum number of responses per day, not including QOTD
 
 answered_question_today = False
 
@@ -86,12 +72,15 @@ async def on_message(message):
     if message.author == client.user:
         return
     
+    # Check if channel is "qotd"
+    if message.channel.name != "qotd":
+        return
+
     if responses_today > max_responses_per_day:
         return
 
-    #Specifically mentioned in message
-    if message.mentions and client.user in message.mentions and not message.mention_everyone:
-
+    #Specifically mentioned in message, or message contains trigger word, or random chance for long messages
+    if (message.mentions and client.user in message.mentions and not message.mention_everyone) or (any(word in message.content.lower() for word in trigger_words)) or (len(message.content) > 80 and random.randint(1, 100) <= 2 * (max_responses_per_day - responses_today)):
         if responses_today == max_responses_per_day:
             answer = ollm.generate(
                 model=ollama_model,
