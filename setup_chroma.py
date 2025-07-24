@@ -2,9 +2,6 @@ import os
 import chromadb
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-# If the logs directory does not exist, create it
-if not os.path.exists("logs"):
-    os.makedirs("logs")
 
 chroma_client_sponsors = chromadb.PersistentClient(path=f"{os.curdir}/db/sponsors")
 chroma_client_facts = chromadb.PersistentClient(path=f"{os.curdir}/db/facts")
@@ -27,7 +24,7 @@ sponsors_collection.upsert(
 facts_collection.upsert(
     ids=["id1","id2","id3","id4","id5","id6", "id7"],
     documents=[
-        "Your favorite movie is Pirates of the Caribbean: Curse of the Black Pearl.",
+        "Your favorite movie is the first Pirates of the Caribbean movie.",
         "You have lived in the US your whole life, but you have been to India and Italy.",
         "You are better than other people because you do not watch anime.",
         "You are anti-union and anti socialism.",
